@@ -1,0 +1,5 @@
+adafruit-circuitpython-RPLidar
+adafruit-circuitpython-servokit
+adafruit-circuitpython-ina219
+numpy
+matplotlib
