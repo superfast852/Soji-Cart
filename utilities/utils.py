@@ -1,7 +1,7 @@
 from os import environ, getcwd
 from matplotlib.animation import FFMpegWriter, FuncAnimation
 from _pickle import dump, load
-from utils.car.pyvec import *
+from utilities.pyvec import *
 from matplotlib.animation import FuncAnimation as anim
 import matplotlib.pyplot as plt
 from time import time
