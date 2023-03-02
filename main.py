@@ -1,3 +1,5 @@
+# TODO: build in more resilience
+
 from utilities import pi
 from utilities.pyvec import *
 from utilities.comms import Server
