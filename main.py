@@ -1,7 +1,6 @@
 # TODO: build in more resilience
 
 from utilities import pi
-from utilities.pyvec import *
 from utilities.comms import Server
 from utilities.utils import animate_and_save
 from utilities.collision import check_surroundings, check_collision
@@ -38,7 +37,7 @@ conn, addr = serv.connect()
 print("Connected to", addr)
 
 # Control Systems
-motors = pi.Drive(21, 20, 12, 16)  # Motor A = Left, Motor B = Right, P1 = Direction, P2 = Speed. Change to BCM numbering.
+motors = pi.Drive(21, 20, 16, 12)  # Motor A = Left, Motor B = Right, P1 = Direction, P2 = Speed. Change to BCM numbering.
 battery = pi.Battery()
 motors.brake()
 lidar = pi.Lidar("/dev/ttyUSB0")

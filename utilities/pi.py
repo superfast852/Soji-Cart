@@ -12,14 +12,11 @@ Motor Driver Logic:
 # TODO: Integrate battery sensor, Integrate ultrasonic sensor, Integrate comms.
 from RPi import GPIO
 from adafruit_servokit import ServoKit
-from math import floor, pi
-# from breezyslam.vehicles import WheeledVehicle
+from math import floor
 import time
 from adafruit_ina219 import INA219
 import board
 import busio
-from threading import Thread
-from time import sleep
 from qmc5883l import QMC5883L
 
 GPIO.setmode(GPIO.BCM)
@@ -188,20 +185,18 @@ class Encoder:
     def __init__(self, pins):  # Pins : [[Upper Left, Upper Right], [Lower Left, Lower Right]]
         self.t2d = lambda x: x * 0.213713786  # 2*pi*40mm/1176 = distance per tick in MM. Distance from ticks
         self.d2t = lambda x: round(x*4.679155326)  # 4.679155 = 2*pi*40mm. Ticks from distance
-        self.encoders = [[0, 0], [0, 0]]
+        self.encoders = {str(pin): 0 for half in pins for pin in half}
+        self.pins = [[str(pin) for pin in half] for half in pins]
         for half in pins:
             for encoder in half:
                 GPIO.setup(encoder, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-                Thread(target=self.update_encoder, args=([pins.index(half), half.index(encoder)], encoder)).start()
+                GPIO.add_event_detect(encoder, GPIO.RISING, callback=self.update_encoder)
 
-    def update_encoder(self, location, pin):
-        while True:
-            GPIO.wait_for_edge(pin, GPIO.RISING)
-            GPIO.wait_for_edge(pin, GPIO.FALLING)
-            self.encoders[location[0]][location[1]] += 1
+    def update_encoder(self, pin):
+        self.encoders[str(pin)] += 1
 
     def test(self, motor, encoder=(0, 0), distance=150):
-        while self.t2d(self.encoders[encoder[0]][encoder[1]]) < distance:
+        while self.t2d(self.encoders[self.pins[encoder[0]][encoder[1]]]) < distance:
             motor.setLeftSpeed(100)
             motor.setRightSpeed(100)
         motor.brake()

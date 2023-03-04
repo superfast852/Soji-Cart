@@ -32,7 +32,7 @@ scan_data = [0] * 360
 try:
     # print(lidar.get_info())
     for i in range(50):
-        for (_, angle, distance) in lidar.iter_scans()[-1]:
+        for (_, angle, distance) in next(lidar.iter_scans()):
             scan_data[min([359, floor(angle)])] = distance
         update_rtp(scan_data)
 

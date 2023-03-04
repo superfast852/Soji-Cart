@@ -4,3 +4,4 @@ adafruit-circuitpython-ina219
 numpy
 matplotlib
 qmc5883l
+smbus2

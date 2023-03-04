@@ -1,7 +1,7 @@
 physical	pin	gpio
 5v		4	5v
 gnd		6	gnd
-sda		3	2
+sda		3	23
 scl		5	3
 
 echo1		23	11
