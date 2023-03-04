@@ -9,17 +9,23 @@ Motor Driver Logic:
 '''
 
 # TODO: Integrate battery sensor, Integrate ultrasonic sensor, Integrate comms.
+# TODO: Integrate battery sensor, Integrate ultrasonic sensor, Integrate comms.
 from RPi import GPIO
 from adafruit_servokit import ServoKit
-from math import floor
+from math import floor, pi
+# from breezyslam.vehicles import WheeledVehicle
 import time
 from adafruit_ina219 import INA219
 import board
 import busio
+from threading import Thread
+from time import sleep
+from qmc5883l import QMC5883L
 
 GPIO.setmode(GPIO.BCM)
 
 class Drive:
+    # TODO: Check if this works
     def __init__(self, left_dir_pin, left_speed_pin, right_dir_pin, right_speed_pin):
         GPIO.setup(left_speed_pin, GPIO.OUT)
         self._l_pwm = GPIO.PWM(left_speed_pin, 1000)
@@ -71,12 +77,27 @@ class Drive:
         self.brake()
         GPIO.cleanup()
 
+    def set(self, leftSpeed, rightSpeed):
+        self.setLeftSpeed(leftSpeed)
+        self.setRightSpeed(rightSpeed)
+
+    def test(self):
+        for i in range(1000):
+            self.set(100, 100)
+        self.brake()
+        for i in range(1000):
+            self.set(-100, -100)
+        self.brake()
+        return 1
+
 class Arm:
+    # TODO: Check if this works
     def __init__(self, num_servos):
         self.kit = ServoKit(channels=8 if num_servos >= 8 else 16)
         self.pose = [0] * num_servos
         self.arm = [self.kit.servo[i] for i in range(num_servos)]
         self.move(self.pose)
+        self.home = [90, 45, 135, 90]
 
     def move(self, pose):
         for i, angle in enumerate(pose):
@@ -87,24 +108,28 @@ class Arm:
                 print(f"Servo {i} does not exist.")
                 return None
 
+    def test(self):
+        self.move(self.home)
+        return 1
+
 class Lidar:
+    #TODO: Fix this. The lidar.iter_scans method basically loops constantly.
     def __init__(self, lidar, baudrate=115200, timeout=1):
         from adafruit_rplidar import RPLidar
-        self.sim_ctr = -1
         self.lidar = RPLidar(None, lidar, baudrate, timeout)
         self.scan_data = [0] * 360
 
     def get_scan(self):
-        for scan in self.lidar.iter_scans():
-            for _, angle, distance in scan:
-                self.scan_data[min(359, floor(angle))] = distance
-            return self.scan_data
+        for _, angle, distance in self.lidar.iter_scans()[-1]:
+            self.scan_data[min(359, floor(angle))] = distance
+        return self.scan_data
 
     def clean_up(self):
         self.lidar.stop()
         self.lidar.disconnect()
 
 class Battery:
+    # TODO: check if this works.
     def __init__(self):
         self.i2c = busio.I2C(board.SCL, board.SDA)
         self.ina = INA219(self.i2c)
@@ -112,7 +137,14 @@ class Battery:
     def read(self):
         return self.ina.bus_voltage+self.ina.shunt_voltage, self.ina.current
 
+    def test(self, threshold=(11.1, 12.6)):
+        for i in range(5):
+            if threshold[0]<self.read()[0]<=threshold[1]:
+                return 0
+        return 1
+
 class Ultrasonic:
+    # TODO: Check if it works.
     def __init__(self, echo, trig):  # 11, 8
         self.echo = echo
         self.trig = trig
@@ -145,14 +177,47 @@ class Ultrasonic:
     def read(self, measures=5):
         return sum([self._get_val() for i in range(measures)])/measures
 
-class Encoders:
-    def __init__(self, pins):
-        self.encoders = [GPIO.setup(i, GPIO.IN) for i in pins]
-        self.counter_thread = None
-        self.count = None
+    def test(self):
+        cache = []
+        for i in range(5):
+            cache.append(self.read())
+        return 1 if (cache[0]-5) < (sum(cache)/len(cache)) < (cache[0]+5) else 0
 
-    def get(self):
-        pass
+class Encoder:
+    # TODO: Check if this works.
+    def __init__(self, pins):  # Pins : [[Upper Left, Upper Right], [Lower Left, Lower Right]]
+        self.t2d = lambda x: x * 0.213713786  # 2*pi*40mm/1176 = distance per tick in MM. Distance from ticks
+        self.d2t = lambda x: round(x*4.679155326)  # 4.679155 = 2*pi*40mm. Ticks from distance
+        self.encoders = [[0, 0], [0, 0]]
+        for half in pins:
+            for encoder in half:
+                GPIO.setup(encoder, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                Thread(target=self.update_encoder, args=([pins.index(half), half.index(encoder)], encoder)).start()
 
-    def calc_tics(self):
-        pass
+    def update_encoder(self, location, pin):
+        while True:
+            GPIO.wait_for_edge(pin, GPIO.RISING)
+            GPIO.wait_for_edge(pin, GPIO.FALLING)
+            self.encoders[location[0]][location[1]] += 1
+
+    def test(self, motor, encoder=(0, 0), distance=150):
+        while self.t2d(self.encoders[encoder[0]][encoder[1]]) < distance:
+            motor.setLeftSpeed(100)
+            motor.setRightSpeed(100)
+        motor.brake()
+        return 1
+
+class Magnetometer:
+    def __init__(self):
+        self.mag = QMC5883L()
+
+    def read(self):
+        return self.mag.get_magnet()
+
+    def read_temp(self):
+        return self.mag.get_temp()
+
+    def test(self):
+        self.read_temp()
+        self.read()
+        return 1

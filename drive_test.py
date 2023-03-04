@@ -1,6 +1,8 @@
 from utilities.pi_test import Encoder
 
-encoders = Encoder(100, [[20, 26], [16, 19]], 0.8)
+# TODO: FIX THIS!!!
+
+encoders = Encoder([[26, 19], [13, 6]])
 
 while True:
     print(encoders.encoders)

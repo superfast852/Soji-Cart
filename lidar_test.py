@@ -31,13 +31,15 @@ def process_data(data):
 scan_data = [0] * 360
 try:
     # print(lidar.get_info())
-    for scan in lidar.iter_scans():
-        for (_, angle, distance) in scan:
+    for i in range(50):
+        for (_, angle, distance) in lidar.iter_scans()[-1]:
             scan_data[min([359, floor(angle)])] = distance
         update_rtp(scan_data)
 
 except KeyboardInterrupt:
     print("Stopping.")
-lidar.stop()
 
-lidar.disconnect()
+except Exception as e:
+    print(e)
+    lidar.stop()
+    lidar.disconnect()

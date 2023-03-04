@@ -1,3 +1,5 @@
+# idk chief, this seems sus. Please check.
+
 from utilities.comms import Server
 # from socket import gethostbyname
 from random import random

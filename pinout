@@ -1,0 +1,21 @@
+physical	pin	gpio
+5v		4	5v
+gnd		6	gnd
+sda		3	2
+scl		5	3
+
+echo1		23	11
+trig1		21	9
+echo2		24	8
+trig2		26	7
+
+pwm1		32	12
+pwm2		38	20
+dir1		36	16
+dir2		40	21
+
+encoderbr	31	6
+encoderbl	33	13
+encodertr	35	19
+encodertl	37	26
+

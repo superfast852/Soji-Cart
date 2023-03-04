@@ -38,12 +38,12 @@ conn, addr = serv.connect()
 print("Connected to", addr)
 
 # Control Systems
-motors = pi.Drive(27, 18, 26, 21)  # Motor A = Left, Motor B = Right, P1 = Direction, P2 = Speed. Change to BCM numbering.
+motors = pi.Drive(21, 20, 12, 16)  # Motor A = Left, Motor B = Right, P1 = Direction, P2 = Speed. Change to BCM numbering.
 battery = pi.Battery()
 motors.brake()
 lidar = pi.Lidar("/dev/ttyUSB0")
-distance_sensor = pi.Ultrasonic(11, 8)
-arm_distance = pi.Ultrasonic(13, 19)
+distance_sensor = pi.Ultrasonic(11, 9)
+arm_distance = pi.Ultrasonic(8, 7)
 arm = pi.Arm(8)
 
 # TODO: Insert Encoders, Insert Comms, Insert Arm, Insert AI
@@ -145,6 +145,7 @@ def grab():
         pass
 
 def _grab_item():
+    # Remember to include the return-to-home code.
     arm.move([0, 0, 0, 0])
 
 def on_timer(info):
