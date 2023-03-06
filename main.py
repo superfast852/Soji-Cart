@@ -32,7 +32,7 @@ wait_id = {}
 
 
 scan = [0]*360
-serv = Server(gethostbyname("soji.local"), 5000)
+serv = Server(gethostbyname("soji.local"), 9160)
 print("Connecting...")
 conn, addr = serv.connect()
 print("Connected to", addr)
