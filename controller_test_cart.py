@@ -10,9 +10,9 @@ def get_speeds(speed, direction):
     if -0.1<direction<0.1:
         return speed, speed
     elif direction>0:
-        return speed*(1 - direction), speed
+        return speed, min(100, 25+(speed*(1 - direction)))
     elif direction<0:
-        return speed, speed*(1 + direction)
+        return min(100, 25+(speed*(1 + direction))), speed
 
 while True:
     try:
