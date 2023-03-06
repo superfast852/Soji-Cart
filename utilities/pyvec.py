@@ -1,10 +1,11 @@
-from numpy import sqrt, arctan, cos, sin, degrees, radians
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors as mcolors, use
+from numpy import sqrt, arctan, cos, sin, degrees, radians, arange, random
+from matplotlib import pyplot as plt, colors as mcolors, use
 try:
+    from matplotlib import pyplot as plt, colors as mcolors, use
     use("Qt5Agg")
 except ImportError:
+    pass
+except ValueError:
     pass
 
 
@@ -124,15 +125,15 @@ def plot_cartesian(x, y, ax, arrow=True, xy_lines=True, vec_lines=True, sep_text
 
     if sep_text:
         # Create custom major ticks to determine position of tick labels
-        x_ticks = np.arange(xmin, xmax + 1, ticks_frequency)
-        y_ticks = np.arange(ymin, ymax + 1, ticks_frequency)
+        x_ticks = arange(xmin, xmax + 1, ticks_frequency)
+        y_ticks = arange(ymin, ymax + 1, ticks_frequency)
         ax.set_xticks(x_ticks[x_ticks != 0])
         ax.set_yticks(y_ticks[y_ticks != 0])
 
         # Create minor ticks placed at each integer to enable drawing of minor grid
         # lines: note that this has no effect in this example with ticks_frequency=1
-        ax.set_xticks(np.arange(xmin, xmax + 1), minor=True)
-        ax.set_yticks(np.arange(ymin, ymax + 1), minor=True)
+        ax.set_xticks(arange(xmin, xmax + 1), minor=True)
+        ax.set_yticks(arange(ymin, ymax + 1), minor=True)
 
     # Draw major and minor grid lines
     ax.grid(which='both', color='grey', linewidth=1, linestyle='-', alpha=0.2)
@@ -149,9 +150,9 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(1,1)
 
-    v1 = Vector(None, np.random.random(2))  # Random components
+    v1 = Vector(None, random.random(2))  # Random components
     print(v1)
-    v2 = Vector(np.random.random(2))  # Random vector
+    v2 = Vector(random.random(2))  # Random vector
     print(v2)
     v3 = v1 + v2
     print(v3)

@@ -18,6 +18,7 @@ from adafruit_ina219 import INA219
 import board
 import busio
 from qmc5883l import QMC5883L
+from adafruit_rplidar import RPLidar
 
 GPIO.setmode(GPIO.BCM)
 
@@ -111,15 +112,8 @@ class Arm:
 
 class Lidar:
     #TODO: Fix this. The lidar.iter_scans method basically loops constantly.
-    def __init__(self, lidar, baudrate=115200, timeout=1):
-        from adafruit_rplidar import RPLidar
-        self.lidar = RPLidar(None, lidar, baudrate, timeout)
-        self.scan_data = [0] * 360
-
-    def get_scan(self):
-        for _, angle, distance in self.lidar.iter_scans()[-1]:
-            self.scan_data[min(359, floor(angle))] = distance
-        return self.scan_data
+    def __init__(self, lidar='/dev/ttyUSB0'):
+        self.lidar = RPLidar(None, lidar, timeout=3)
 
     def clean_up(self):
         self.lidar.stop()

@@ -1,17 +1,19 @@
 from math import floor
-from adafruit_rplidar import RPLidar
+
+import rplidar
+
 from utilities.pyvec import *
 from matplotlib import pyplot as plt
+from threading import Thread
+from adafruit_rplidar import RPLidar, RPLidarException
 
 fig, ax = plt.subplots(1,1)
 
 # Setup the RPLidar
 PORT_NAME = "/dev/ttyUSB0"
-lidar = RPLidar(None, PORT_NAME, timeout=3)
 
 # used to scale data to fit on the screen
 max_distance = 0
-
 
 def update_rtp(scan):
     ax.clear()
@@ -24,22 +26,18 @@ def update_rtp(scan):
     plt.pause(1e-16)
     plt.draw()
 
+scan_data = [0] * 360
 
 def process_data(data):
-    print(data)
+    for (_, angle, distance) in data:
+        scan_data[min(359, floor(angle))] = distance
 
-scan_data = [0] * 360
-try:
-    # print(lidar.get_info())
-    for i in range(50):
-        for (_, angle, distance) in next(lidar.iter_scans()):
-            scan_data[min([359, floor(angle)])] = distance
-        update_rtp(scan_data)
+lidar = RPLidar(None, PORT_NAME, timeout=3)
 
-except KeyboardInterrupt:
-    print("Stopping.")
+for i in lidar.iter_scans():
+    process_data(i)
+    print(scan_data)
 
-except Exception as e:
-    print(e)
-    lidar.stop()
-    lidar.disconnect()
+lidar.stop()
+lidar.disconnect()
+

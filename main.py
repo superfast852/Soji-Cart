@@ -38,11 +38,11 @@ print("Connected to", addr)
 
 # Control Systems
 motors = pi.Drive(21, 20, 16, 12)  # Motor A = Left, Motor B = Right, P1 = Direction, P2 = Speed. Change to BCM numbering.
-battery = pi.Battery()
+#battery = pi.Battery()
 motors.brake()
 lidar = pi.Lidar("/dev/ttyUSB0")
-distance_sensor = pi.Ultrasonic(11, 9)
-arm_distance = pi.Ultrasonic(8, 7)
+#distance_sensor = pi.Ultrasonic(11, 9)
+#arm_distance = pi.Ultrasonic(8, 7)
 arm = pi.Arm(8)
 
 # TODO: Insert Encoders, Insert Comms, Insert Arm, Insert AI
@@ -94,19 +94,20 @@ def exit_handle():
     print("Clean exit. Robot stopped.")
 
 def async_ops(check_period=30):
-    from time import sleep
-    while True:
-        trash_lvl = distance_sensor.read()
-        bat_lvl = battery.read()
+    #from time import sleep
+    #while True:
+        #trash_lvl = distance_sensor.read()
+        #bat_lvl = battery.read()
 
-        if trash_lvl<=trash_lvl_threshold:
-            print("Trash LVL Threshold Reached.")
+        #if trash_lvl<=trash_lvl_threshold:
+        #    print("Trash LVL Threshold Reached.")
 
-        if bat_lvl <= battery_dead_threshold:
-            interrupt_main()
-        elif bat_lvl <= battery_low_threshold:
-            print("WARNING: BATTERY LOW")
-        sleep(check_period)
+        #if bat_lvl <= battery_dead_threshold:
+        #    interrupt_main()
+        #elif bat_lvl <= battery_low_threshold:
+        #    print("WARNING: BATTERY LOW")
+        #sleep(check_period)
+        pass
 
 def grab():
     # TODO: Check for comms integrity
@@ -130,7 +131,8 @@ def grab():
             c2c = serv.rx(conn)
             serv.tx("received", conn)
 
-        while arm_distance.read() > 10:
+        #while arm_distance.read() > 10:
+        while 9>10:
             motors.setLeftSpeed(max_speed/spin_intensity)
             motors.setRightSpeed(max_speed/spin_intensity)
         motors.brake()
@@ -156,16 +158,15 @@ async_thread = Thread(target=async_ops)
 async_thread.start()
 
 # Main Loop
-while True:
+for scan in lidar.lidar.iter_scans():
     # TODO: add arm control
+
     try:
         # Data Fetching
-        scan = lidar.get_scan()
         position, center = serv.rx(conn)
         if center:
             serv.tx("received", conn)
             motors.brake()
-
             grab()
         else:
             serv.tx(scan, conn)  # Here, you can send any relevant cart data. [scans, battery, trash, etc.]

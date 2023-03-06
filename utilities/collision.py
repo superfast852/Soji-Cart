@@ -6,9 +6,9 @@ from numpy import shape
 
 
 def check_collision(ranges, collision_range, threshold):
-    for vec in ranges[collision_range[0]:collision_range[1]]: # for every vector in the collision range
-        if vec > threshold: # if the vector is greater than the threshold
-            pass # go to next vector
+    for vec in ranges[collision_range[0]:collision_range[1]]:  # for every vector in the collision range
+        if vec > threshold:  # if the vector is greater than the threshold
+            pass  # go to next vector
         else:  # if the vector is less than the threshold
             return True  # an obstacle has been detected
     else:
@@ -21,7 +21,7 @@ def check_surroundings(ranges, threshold):
 
     for i, distance in enumerate(ranges[90:180]):  # Right Side Check
         if distance > threshold:  # If the vector_distance is greater than the threshold
-            rs_clear.append(i+90)  # append the angle of the vector to the list of available angles angles
+            rs_clear.append(i+90)  # append the angle of the vector to the list of available angles
 
     for i, distance in enumerate(ranges[180:270]):  # Left Side Check
         if distance > threshold:

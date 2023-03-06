@@ -23,6 +23,7 @@ while True:
                 speed, heading = s.rx(conn)
                 left, right = get_speeds(speed, heading)
                 drive.set(left, right)
+                conn.send("received".encode())
             except Exception as e:
                 print(f"[ERROR] {addr}: {e}")
     except Exception as e:
