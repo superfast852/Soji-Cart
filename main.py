@@ -1,14 +1,15 @@
 # TODO: build in more resilience
-
+from adafruit_rplidar import RPLidarException
 from utilities import pi
 from utilities.comms import Server
 from utilities.utils import animate_and_save
 from utilities.collision import check_surroundings, check_collision
-
+from socket import gethostbyname
 from atexit import register
 from time import process_time
 from threading import Thread
 from _thread import interrupt_main
+from math import floor
 
 # Parameters
 collision_space = 19  # Range of angles to check for obstacles in front of car
@@ -31,7 +32,7 @@ wait_id = {}
 
 
 scan = [0]*360
-serv = Server("localhost", 5000)
+serv = Server(gethostbyname("soji.local"), 5000)
 print("Connecting...")
 conn, addr = serv.connect()
 print("Connected to", addr)
@@ -156,33 +157,37 @@ def on_timer(info):
 register(exit_handle)  # Register exit handler
 async_thread = Thread(target=async_ops)
 async_thread.start()
-
 # Main Loop
-for scan in lidar.lidar.iter_scans():
-    # TODO: add arm control
-
+while True:
     try:
-        # Data Fetching
-        position, center = serv.rx(conn)
-        if center:
-            serv.tx("received", conn)
-            motors.brake()
-            grab()
-        else:
-            serv.tx(scan, conn)  # Here, you can send any relevant cart data. [scans, battery, trash, etc.]
+        for frame in lidar.lidar.iter_scans():
+        # TODO: add arm control
+            for _, angle, distance in frame:
+                scan[min(359, floor(angle))] = distance
+            # Data Fetching
+            position, center = serv.rx(conn)
+            if center:
+                serv.tx("received", conn)
+                motors.brake()
+                grab()
+            else:
+                serv.tx(scan, conn)  # Here, you can send any relevant cart data. [scans, battery, trash, etc.]
 
-        # Data Processing
-        if scan.count(scan_error_point) < scan_error_tolerance:  # Check for bad scans
-            scans.append(scan)
-        else:  # If there is a bad scan, skip the rest of the loop
-            continue
+            # Data Processing
+            if scan.count(scan_error_point) < scan_error_tolerance:  # Check for bad scans
+                scans.append(scan)
+            else:  # If there is a bad scan, skip the rest of the loop
+                continue
 
-        # Robot Control
-        direction, angles = set_course(scan)
+            # Robot Control
+            direction, angles = set_course(scan)
 
-        # Cleanup
-        wait(1, print, process_time())
+            # Cleanup
+            wait(1, print, process_time())
 
     except KeyboardInterrupt as e:
         print(f"{e}. Exiting now.")
         break
+    except RPLidarException as e:
+        print(e)
+        continue
