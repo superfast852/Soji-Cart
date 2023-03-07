@@ -1,9 +1,9 @@
 from adafruit_servokit import ServoKit
 from utilities.comms import Server
+from utilities.pi import Arm
 from socket import gethostbyname
 
-kit = ServoKit(channels=8)
-arm = [kit.servo[i] for i in range(6)]
+arm = Arm(8)
 
 # Set the arm to the home position
 home = [90, 45, 180, 45, 0, 125]
@@ -17,8 +17,7 @@ while True:
         while conn:
             try:
                 pose = [int(i) for i in conn.recv(1024).split(", ")]
-                for i, angle in enumerate(pose):
-                    arm[i].angle = angle
+                arm.move(pose)
                 conn.send("received".encode())
             except Exception as e:
                 print(f"[ERROR] {addr}: {e}")
