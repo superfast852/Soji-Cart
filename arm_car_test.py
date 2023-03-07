@@ -23,7 +23,7 @@ while True:
         print(f"CONNECTED: {addr}")
         while conn:
             try:
-                info = conn.recv(1024).split(" ")
+                info = conn.recv(1024).decode().split(" ")
                 if info[0][-1] == ",":  # Arm mode
                     drive.brake()
                     pose = list(map(lambda x: int(x.replace(",", "")), info))
