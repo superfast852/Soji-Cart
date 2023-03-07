@@ -19,6 +19,7 @@ while True:
                 pose = [int(i) for i in conn.recv(1024).split(", ")]
                 for i, angle in enumerate(pose):
                     arm[i].angle = angle
+                conn.send("received".encode())
             except Exception as e:
                 print(f"[ERROR] {addr}: {e}")
     except Exception as e:
