@@ -100,12 +100,14 @@ class Arm:
         self.move(self.home)
 
     def grab(self):
-        self.pose[-1] = 0
-        self.move(self.pose)
+        temp = self.pose.copy()
+        temp[-1] = 0
+        self.move(temp)
 
     def drop(self):
-        self.pose[-1] = 180
-        self.move(self.pose)
+        temp = self.pose.copy()
+        temp[-1] = 180
+        self.move(temp)
 
     def move(self, pose, step=0.1):
         for i, angle in enumerate(pose):
