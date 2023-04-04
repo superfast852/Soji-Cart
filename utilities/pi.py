@@ -90,7 +90,7 @@ class Drive:
         return 1
 
 class Arm:
-    def __init__(self, num_servos):
+    def __init__(self, num_servos=6):
         self.kit = ServoKit(channels=8 if num_servos >= 8 else 16)
         self.pose = [0] * num_servos
         self.arm = [self.kit.servo[i] for i in range(num_servos)]
@@ -100,16 +100,16 @@ class Arm:
         self.move(self.home)
 
     def grab(self):
-        temp = self.pose.copy()
-        temp[-1] = 0
-        self.move(temp)
+        self.pose[-1] = 0
+        self.move()
 
     def drop(self):
-        temp = self.pose.copy()
-        temp[-1] = 180
-        self.move(temp)
+        self.pose[-1] = 180
+        self.move()
 
-    def move(self, pose, step=0.1):
+    def move(self, pose=None, step=0.1):
+        if pose is None:
+            pose = self.pose
         for i, angle in enumerate(pose):
             try:
                 self.arm[i].angle = angle
