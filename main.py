@@ -1,4 +1,4 @@
-# TODO: build in more resilience
+# TODO: build in more resilience, comm_based host
 from adafruit_rplidar import RPLidarException
 from utilities import pi
 from utilities.comms import Server
@@ -17,8 +17,8 @@ collision_threshold = 1.5  # Minimum distance for the code to consider as obstac
 max_speed = 100
 scan_error_tolerance = 10
 scan_error_point = 0
-battery_dead_threshold = 0.1  # 7.4
-battery_low_threshold = 8
+battery_dead_threshold = 11.3  # 7.4
+battery_low_threshold = 11.5
 trash_lvl_threshold = 1
 spin_intensity = 4  # Divides max_speed by this to spin robot in setCourse()
 save = True
@@ -29,6 +29,7 @@ arm_tolerance = 5
 collision_bounds = (180 - (collision_space // 2), 180 + (collision_space // 2))
 scans = []
 wait_id = {}
+arm_position = []
 
 
 scan = [0]*360
@@ -39,11 +40,11 @@ print("Connected to", addr)
 
 # Control Systems
 motors = pi.Drive(21, 20, 16, 12)  # Motor A = Left, Motor B = Right, P1 = Direction, P2 = Speed. Change to BCM numbering.
-#battery = pi.Battery()
+battery = pi.Battery()
 motors.brake()
 lidar = pi.Lidar("/dev/ttyUSB0")
-#distance_sensor = pi.Ultrasonic(11, 9)
-#arm_distance = pi.Ultrasonic(8, 7)
+trash_lvl = pi.Ultrasonic(11, 9)
+arm_distance = pi.Ultrasonic(8, 7)
 arm = pi.Arm(8)
 
 # TODO: Insert Encoders, Insert Comms, Insert Arm, Insert AI
@@ -89,34 +90,40 @@ def set_course(lidar_data):
 def exit_handle():
     motors.exit()
     lidar.clean_up()
-    async_thread.join()
+    async_thread.join()  # TODO: Fix this!
     if save:
         animate_and_save(scans, filename=scan_save_dir, bounds=collision_bounds)
     print("Clean exit. Robot stopped.")
 
 def async_ops(check_period=30):
-    #from time import sleep
-    #while True:
-        #trash_lvl = distance_sensor.read()
-        #bat_lvl = battery.read()
+    from time import sleep
+    trash_lvl_check = 0
+    while True:
+        current_trash_lvl = trash_lvl.read()
+        bat_lvl = battery.read()
 
-        #if trash_lvl<=trash_lvl_threshold:
-        #    print("Trash LVL Threshold Reached.")
+        if current_trash_lvl<=trash_lvl_threshold and trash_lvl_check >= 10:
+            print("Trash LVL Threshold Reached.")
+            break
+        else:
+            trash_lvl_check += 1
 
-        #if bat_lvl <= battery_dead_threshold:
-        #    interrupt_main()
-        #elif bat_lvl <= battery_low_threshold:
-        #    print("WARNING: BATTERY LOW")
-        #sleep(check_period)
-        pass
+        if bat_lvl <= battery_dead_threshold:
+            break
+        elif bat_lvl <= battery_low_threshold:
+            print("WARNING: BATTERY LOW")
+        sleep(check_period)
+    interrupt_main()
 
 def grab():
     # TODO: Check for comms integrity
     # while arm is not centered enough
-    c2c = serv.rx(conn)
-    serv.tx("received", conn)
+
+    # PHASE 1: CAR ALIGNMENT
+    c2c = serv.rx(conn)  # Get initial center-to-center distance.
+    serv.tx("received", conn)  # TODO: move arm to 90 degrees, aka center.
     try:
-        while abs(c2c) > arm_tolerance:
+        while abs(c2c) > arm_tolerance:  # TODO: if the arm leaves center of image in detection, spin until a C2C is obtained.
             spin = "left" if c2c < 25 else "right" if c2c > 25 else "center"
             if spin == "left":
                 # Move cart to left until its in center
@@ -129,15 +136,18 @@ def grab():
                 motors.setRightSpeed(max_speed/spin_intensity)
                 pass
 
-            c2c = serv.rx(conn)
+            c2c = serv.rx(conn)  # Get new C2C
             serv.tx("received", conn)
 
-        #while arm_distance.read() > 10:
-        while 9>10:
-            motors.setLeftSpeed(max_speed/spin_intensity)
-            motors.setRightSpeed(max_speed/spin_intensity)
+        # PHASE 2: CLOSE-IN
+        motors.setLeftSpeed(max_speed / spin_intensity)
+        motors.setRightSpeed(max_speed / spin_intensity)
+        while arm_distance.read() > 10:
+            center_arm()  # TODO: Implement center_arm.
         motors.brake()
         # When while loop is completed, grab item
+
+        # PHASE 3: COLLECTION
         _grab_item()
         serv.rx(conn)
         serv.tx("grabbed", conn)
@@ -150,8 +160,29 @@ def _grab_item():
     # Remember to include the return-to-home code.
     arm.move([0, 0, 0, 0])
 
+def grabV2():
+    c2c = serv.rx(conn)  # Get initial center-to-center distance.
+    while 80<=arm_position[0]<=100:  # Phase 1: Car Alignment
+        if abs(c2c) < 25:
+            motors.setLeftSpeed(max_speed/spin_intensity)
+            motors.setRightSpeed(max_speed/(spin_intensity/2))
+        elif abs(c2c) > 25:
+            motors.setLeftSpeed(max_speed/(spin_intensity/2))
+            motors.setRightSpeed(max_speed/spin_intensity)
+        c2c = serv.rx(conn)
+        serv.tx("received", conn)
+    motors.brake()
+
+    while 80<=arm_position[1]<=100:
+        motors.setLeftSpeed(max_speed/spin_intensity)
+        motors.setRightSpeed(max_speed/spin_intensity)
+    _grab_item()
+
 def on_timer(info):
     print(info)
+
+def center_arm():
+    pass
 
 # Preloop preparations.
 register(exit_handle)  # Register exit handler
@@ -171,10 +202,11 @@ while True:
                 motors.brake()
                 grab()
             else:
+                arm.move(position)
                 serv.tx(scan, conn)  # Here, you can send any relevant cart data. [scans, battery, trash, etc.]
 
             # Data Processing
-            if scan.count(scan_error_point) < scan_error_tolerance:  # Check for bad scans
+            if scan.count(scan_error_point) < scan_error_tolerance:  # Check for bad scans (how many 0-scans are there)
                 scans.append(scan)
             else:  # If there is a bad scan, skip the rest of the loop
                 continue

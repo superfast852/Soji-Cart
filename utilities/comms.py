@@ -20,23 +20,26 @@ class Comms:
 
 
 class Server(Comms):
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, conn_wait=30):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind((ip, port))
+        self.s.settimeout(conn_wait)
         self.s.listen(1)
 
-    def connect(self):
-        return self.s.accept()
+    def connect(self, comm_timeout=5):
+        s, addr = self.s.accept()
+        s.settimeout(comm_timeout)
 
     def close(self):
         pass
 
 class Client(Comms):
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, timeout=5):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.connect((ip, port))
+        self.s.settimeout(timeout)
 
     def send(self, data):
         self.tx(data, self.s)

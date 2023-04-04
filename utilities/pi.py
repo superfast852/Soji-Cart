@@ -12,18 +12,18 @@ Motor Driver Logic:
 # TODO: Integrate battery sensor, Integrate ultrasonic sensor, Integrate comms.
 from RPi import GPIO
 from adafruit_servokit import ServoKit
-from math import floor
 import time
 from adafruit_ina219 import INA219
 import board
 import busio
 from qmc5883l import QMC5883L
 from adafruit_rplidar import RPLidar
+from adafruit_gps import GPS
+import serial
 
 GPIO.setmode(GPIO.BCM)
 
 class Drive:
-    # TODO: Check if this works
     def __init__(self, left_dir_pin, left_speed_pin, right_dir_pin, right_speed_pin):
         GPIO.setup(left_speed_pin, GPIO.OUT)
         self._l_pwm = GPIO.PWM(left_speed_pin, 1000)
@@ -89,18 +89,29 @@ class Drive:
         return 1
 
 class Arm:
-    # TODO: Check if this works
     def __init__(self, num_servos):
         self.kit = ServoKit(channels=8 if num_servos >= 8 else 16)
         self.pose = [0] * num_servos
         self.arm = [self.kit.servo[i] for i in range(num_servos)]
-        self.move(self.pose)
-        self.home = [90, 45, 135, 90]
+        self.home = [90, 100, 160, 90, 150, 180]
+        self.grabbing = [90, 25, 90, 100, 150, 180]
+        self.dropping = [90, 50, 20, 0, 150, 0]
+        self.move(self.home)
 
-    def move(self, pose):
+    def grab(self):
+        self.pose[-1] = 0
+        self.move(self.pose)
+
+    def drop(self):
+        self.pose[-1] = 180
+        self.move(self.pose)
+
+    def move(self, pose, step=0.01):
         for i, angle in enumerate(pose):
             try:
-                self.arm[i].angle = angle
+                for j in range(self.pose[i], angle, (step if angle > self.pose[i] else -step)):
+                    self.arm[i].angle = int(j)
+                    time.sleep(step)
                 self.pose[i] = angle
             except IndexError:
                 print(f"Servo {i} does not exist.")
@@ -111,9 +122,14 @@ class Arm:
         return 1
 
 class Lidar:
-    #TODO: Fix this. The lidar.iter_scans method basically loops constantly.
     def __init__(self, lidar='/dev/ttyUSB0'):
+        self.port = lidar
         self.lidar = RPLidar(None, lidar, timeout=3)
+
+    def reconnect(self):
+        self.clean_up()
+        del self.lidar
+        self.lidar = RPLidar(None, self.port, timeout=3)
 
     def clean_up(self):
         self.lidar.stop()
@@ -175,7 +191,6 @@ class Ultrasonic:
         return 1 if (cache[0]-5) < (sum(cache)/len(cache)) < (cache[0]+5) else 0
 
 class Encoder:
-    # TODO: Check if this works.
     def __init__(self, pins):  # Pins : [[Upper Left, Upper Right], [Lower Left, Lower Right]]
         self.t2d = lambda x: x * 0.213713786  # 2*pi*40mm/1176 = distance per tick in MM. Distance from ticks
         self.d2t = lambda x: round(x*4.679155326)  # 4.679155 = 2*pi*40mm. Ticks from distance
@@ -197,6 +212,7 @@ class Encoder:
         return 1
 
 class Magnetometer:
+
     def __init__(self):
         self.mag = QMC5883L()
 
@@ -210,3 +226,24 @@ class Magnetometer:
         self.read_temp()
         self.read()
         return 1
+
+class GPS:
+    # TODO: Integrate reading, parsing, and async fetching.
+    def __init__(self, freq=500):
+        self.uart = serial.Serial("/dev/ttyUSB1", baudrate=9600, timeout=10)
+        self.gps = GPS(self.uart, debug=False)
+        self.gps.send_command(b"PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
+        freq_cmd = f"PMTK220,{1/freq}"
+        self.gps.send_command(bytes(freq_cmd))
+        self.pos = [None, None]
+        self.extra_data = None
+
+    def get_data(self, extra=False):
+        if extra:
+            return self.pos, self.extra_data
+        else:
+            return self.pos
+
+    def _update(self):
+        while True:
+            pass

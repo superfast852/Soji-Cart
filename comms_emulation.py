@@ -4,7 +4,7 @@ from utilities.comms import Server
 # from socket import gethostbyname
 from random import random
 
-ip = "172.6.0.116"  # gethostbyname("soji.local")
+ip = "localhost"  # "172.6.0.116"  # gethostbyname("soji.local")
 s = Server(ip, 9160)
 
 def grab_routine():
@@ -14,7 +14,7 @@ def grab_routine():
     # arm.move([90, 20, 0, 50])
     print(f"Initial C2C: {c2c}")
     while abs(c2c) > 25:
-        print(f"{addr}: C2C = {s.rx}")
+        print(f"{addr}: C2C = {c2c}")
         spin = "left" if c2c < 25 else "right" if c2c > 25 else "center"
         print(spin)
         c2c = s.rx(conn)
@@ -44,7 +44,7 @@ while True:
                     print(e)
                     continue
             else:
-                s.tx(random, conn)
+                s.tx(random(), conn)
     except Exception as e:
         print(f"[ERROR] {addr}: {e}")
         continue
