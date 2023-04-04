@@ -107,7 +107,7 @@ class Arm:
         self.pose[-1] = 180
         self.move()
 
-    def grab_item(self, period=1):
+    def grab_item(self, period=0.5):
         self.move(self.grabbing)
         time.sleep(period)
         self.grab()
