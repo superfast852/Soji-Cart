@@ -95,7 +95,7 @@ class Arm:
         self.pose = [0] * num_servos
         self.arm = [self.kit.servo[i] for i in range(num_servos)]
         self.home = [90, 75, 130, 90, 150, 180]
-        self.grabbing = [90, 25, 90, 100, 150, 180]
+        self.grabbing = [90, 10, 90, 100, 150, 180]
         self.dropping = [90, 50, 20, 0, 150, 0]
         self.move(self.home)
 
@@ -111,11 +111,11 @@ class Arm:
         self.move(self.grabbing)
         time.sleep(period)
         self.grab()
-        time.sleep(period / 10)
+        time.sleep(0.1)
         self.move(self.dropping)
         time.sleep(period)
         self.drop()
-        time.sleep(period / 10)
+        time.sleep(0.1)
         self.move(self.home)
 
     def move(self, pose=None, step=0.1):
