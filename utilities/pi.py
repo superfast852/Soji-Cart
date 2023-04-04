@@ -20,6 +20,7 @@ from qmc5883l import QMC5883L
 from adafruit_rplidar import RPLidar
 from adafruit_gps import GPS
 import serial
+from numpy import arange
 
 GPIO.setmode(GPIO.BCM)
 
@@ -109,7 +110,7 @@ class Arm:
     def move(self, pose, step=0.01):
         for i, angle in enumerate(pose):
             try:
-                for j in range(self.pose[i], angle, (step if angle > self.pose[i] else -step)):
+                for j in arange(self.pose[i], angle, (step if angle > self.pose[i] else -step)):
                     self.arm[i].angle = int(j)
                     time.sleep(step)
                 self.pose[i] = angle
