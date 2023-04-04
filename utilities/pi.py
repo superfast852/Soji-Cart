@@ -112,8 +112,8 @@ class Arm:
     def move(self, pose, step=0.1):
         for i, angle in enumerate(pose):
             try:
-                for j in arange(self.pose[i], angle, (step if angle > self.pose[i] else -step)):
-                    self.arm[i].angle = int(j)
+                self.arm[i].angle = angle
+                time.sleep(step)
                 self.pose[i] = angle
             except IndexError:
                 print(f"Servo {i} does not exist.")
