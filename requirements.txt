@@ -1,4 +1,4 @@
-adafruit-circuitpython-RPLidar
+rplidar-roboticia
 adafruit-circuitpython-servokit
 adafruit-circuitpython-ina219
 adafruit-circuitpython-gps
@@ -6,3 +6,4 @@ numpy
 matplotlib
 qmc5883l
 smbus2
+board

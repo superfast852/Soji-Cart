@@ -1,7 +1,6 @@
 from numpy import sqrt, arctan, cos, sin, degrees, radians, arange, random
 from matplotlib import pyplot as plt, colors as mcolors, use
 try:
-    from matplotlib import pyplot as plt, colors as mcolors, use
     use("Qt5Agg")
 except ImportError:
     pass
@@ -35,7 +34,7 @@ class Vector:
         if self.components is not None:
             magnitude = sqrt(self.components[0]**2 + self.components[1]**2)
             angle = degrees(arctan(self.components[1]/self.components[0]))
-            self.vector = [[round(magnitude, 5), round(angle, 5)]]
+            self.vector = [round(magnitude, 5), round(angle, 5)]
 
     def get_components(self, vector):
         x = vector[0]*cos(radians(vector[1]))
@@ -142,23 +141,3 @@ def plot_cartesian(x, y, ax, arrow=True, xy_lines=True, vec_lines=True, sep_text
     arrow_fmt = dict(markersize=4, color='black', clip_on=False)
     ax.plot(1, 0, marker='>', transform=ax.get_yaxis_transform(), **arrow_fmt)
     ax.plot(0, 1, marker='^', transform=ax.get_xaxis_transform(), **arrow_fmt)
-
-
-
-
-if __name__ == "__main__":
-
-    fig, ax = plt.subplots(1,1)
-
-    v1 = Vector(None, random.random(2))  # Random components
-    print(v1)
-    v2 = Vector(random.random(2))  # Random vector
-    print(v2)
-    v3 = v1 + v2
-    print(v3)
-
-    x = [v1.components[0], v2.components[0], v3.components[0]]
-    y = [v1.components[1], v2.components[1], v3.components[1]]
-
-    plot_cartesian(x, y, ax)
-    plt.show()

@@ -1,24 +1,18 @@
-from math import floor
-from adafruit_rplidar import RPLidar
-
-# Setup the RPLidar
-PORT_NAME = "/dev/ttyUSB0"
-
-# used to scale data to fit on the screen
-max_distance = 0
-
-scan_data = [0] * 360
-
-def process_data(data):
-    for (_, angle, distance) in data:
-        scan_data[min(359, floor(angle))] = distance
-
-lidar = RPLidar(None, PORT_NAME, timeout=3)
-
-for i in lidar.iter_scans():
-    process_data(i)
-    print(scan_data)
-
-lidar.stop()
-lidar.disconnect()
-
+from utilities.pi import Lidar
+from utilities import collision
+from utilities.utils import animate_and_save
+import time
+scans = []
+lidar = Lidar()
+try:
+    while len(scans) < 100:
+        scan = lidar.read()
+        scans.append(scan)
+        print(f"{len(scans)}: {scans[-1]}")
+        print(collision.check_surroundings(scans[-1], 50))
+        time.sleep(0.1)
+except Exception as e:
+    print(e)
+lidar.exit()
+animate_and_save(scans)
+print("Exiting...")
