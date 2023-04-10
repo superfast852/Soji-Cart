@@ -122,6 +122,8 @@ class Arm:
         self.move(self.home)
 
     def move(self, pose=None, timestep=0.1):
+        if pose == None:
+            pose = self.pose
         # TODO: Add smoothSpeed
         for i, angle in enumerate(pose):
             try:
