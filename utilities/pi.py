@@ -122,19 +122,16 @@ class Arm:
         self.move(self.home)
 
     def move(self, pose=None, timestep=0.1):
-        if pose is None:
-            pose = self.pose
-        biggest_change = pose.index(max([abs(pose[i] - self.pose[i]) for i in range(len(pose))]))
-        while self.pose[biggest_change] != pose[biggest_change]:
-            for i, angle in enumerate(pose):
-                try:
-                    step = smoothSpeed(self.pose[i], angle, 1, 0.1)
-                    self.arm[i].angle = int(step)
-                    time.sleep(timestep)
-                    self.pose[i] = int(step)
-                except IndexError:
-                    print(f"Servo {i} does not exist.")
-                    return None
+        # TODO: Add smoothSpeed
+        for i, angle in enumerate(pose):
+            try:
+                # step = smoothSpeed(self.pose[i], angle, 1, 0.1)
+                self.arm[i].angle = angle
+                time.sleep(timestep)
+                self.pose[i] = angle
+            except IndexError:
+                print(f"Servo {i} does not exist.")
+                return None
 
     def test(self):
         self.move(self.home)
