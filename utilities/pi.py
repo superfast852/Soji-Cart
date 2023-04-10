@@ -17,7 +17,6 @@ except ImportError:
     pass
 
 import time
-from utilities.utils import smoothSpeed
 from threading import Thread
 
 
