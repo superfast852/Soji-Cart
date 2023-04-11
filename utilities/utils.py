@@ -1,9 +1,7 @@
 from os import environ, getcwd
-from matplotlib.animation import FFMpegWriter, FuncAnimation
+from matplotlib.animation import FFMpegWriter, FuncAnimation as anim
 from _pickle import dump, load
 from utilities.pyvec import *
-from matplotlib.animation import FuncAnimation as anim
-import matplotlib.pyplot as plt
 from time import time
 
 
@@ -25,7 +23,7 @@ def set_environment():
     environ["PYTHONIOENCODING"] = "UTF-8"
 
 
-def _save_scan(scan, animation: FuncAnimation, filename="scans", format="mp4", fps=30):
+def _save_scan(scan, animation, filename="scans", format="mp4", fps=30):
     # Pickle save
     with open(f"{filename}.pkl", "wb") as f:
         dump(scan, f)
