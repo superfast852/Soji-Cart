@@ -1,8 +1,9 @@
 from os import environ, getcwd
 from matplotlib.animation import FFMpegWriter, FuncAnimation as anim
 from _pickle import dump, load
-from utilities.pyvec import *
+from utilities.pyvec import plot_cartesian, Vector, plt
 from time import time
+from math import pi, sin, cos, radians
 
 
 def smoothSpeed(current, target, speed_lim=1, min_speed=0.1, smoothing_spread=10):
@@ -36,11 +37,9 @@ def _save_scan(scan, animation, filename="scans", format="mp4", fps=30):
     return 1
 
 
-x = [0]*360
-y = [0]*360
-
-
 def _anim_lidar(i, ax, scans, bounds=(0, 360), collision_bounds=None, amplification=1):
+    x = [0]*360
+    y = [0]*360
     ax.clear()
     scan = scans[i]
     vectors = [Vector([magnitude*amplification, angle-90]) for angle, magnitude in enumerate(scan)]
@@ -68,14 +67,8 @@ def animate_and_save(scans, amplification=1, mask=(0, 360), bounds=None, filenam
     print(f"Done! Saved at {filename}")
 
 
-def update_rtp(args):
-    scan, ax = args
+def update_rtp(x, y, ax):
     ax.clear()
-    vectors = [Vector([distance, angle]) for angle, distance in enumerate(scan)]
-
-    x = [vector.x for vector in vectors]
-    y = [vector.y for vector in vectors]
-
     plot_cartesian(x, y, ax, 0, 0, 0, 0, color="b")
     plt.pause(0.000001)
     plt.draw()
@@ -83,3 +76,18 @@ def update_rtp(args):
 
 def op_time(prev_time=0):
     return time() - prev_time
+
+
+def point_pos(d, theta):
+    theta_rad = pi/2 - radians(theta)
+    return d*cos(theta_rad), d*sin(theta_rad)
+
+
+def plot(data, ax, mask=(0, 0)):
+    x = []
+    y = []
+    for angle, distance in enumerate(data[mask[0]:mask[1]]):
+        point = point_pos(distance, angle)
+        x.append(point[0])
+        y.append(point[1])
+    update_rtp(x, y, ax)

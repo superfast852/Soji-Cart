@@ -8,11 +8,12 @@ from atexit import register
 from time import process_time
 from threading import Thread
 from _thread import interrupt_main
+from rplidar import RPLidar
 from math import floor
 
 # Parameters
-collision_space = 19  # Range of angles to check for obstacles in front of car
-collision_threshold = 1.5  # Minimum distance for the code to consider as obstacle.
+collision_space = 20  # Range of angles to check for obstacles in front of car
+collision_threshold = 5  # Minimum distance for the code to consider as obstacle.
 max_speed = 100
 scan_error_tolerance = 10
 scan_error_point = 0
@@ -26,7 +27,7 @@ arm_tolerance = 5
 async_life = 1
 
 # Program variables
-collision_bounds = (180 - (collision_space // 2), 180 + (collision_space // 2))
+collision_bounds = (270 - (collision_space // 2), 270 + (collision_space // 2))
 scans = []
 wait_id = {}
 arm_position = []
@@ -42,7 +43,7 @@ print("Connected to", addr)
 motors = pi.Drive(21, 20, 16, 12)  # Motor A = Left, Motor B = Right, P1 = Direction, P2 = Speed. Change to BCM numbering.
 battery = pi.Battery()
 motors.brake()
-lidar = pi.Lidar()
+lidar = RPLidar('/dev/ttyUSB0', timeout=3)
 arm = pi.Arm(8)
 trash_lvl = 0
 
@@ -92,7 +93,9 @@ def set_course(lidar_data):
 def exit_handle():
     global async_life
     motors.exit()
-    lidar.exit()
+    lidar.stop()
+    lidar.stop_motor()
+    lidar.disconnect()
     async_life = 0
     async_thread.join()
     if save:
@@ -149,10 +152,13 @@ def grab():
 register(exit_handle)  # Register exit handler
 async_thread = Thread(target=async_ops)
 async_thread.start()
+lidar.clean_input()
+scan = [0]*360
 # Main Loop
-while True:
+for scan in lidar.iter_scans():
     try:
-        scan = lidar.read()
+        for _, distance, angle in scan:
+            scan[min(359, int(angle))] = distance/10
         # Data Fetching
         position, center = serv.rx(conn)
         if center:

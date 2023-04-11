@@ -20,9 +20,8 @@ import time
 from threading import Thread
 
 
-
 class Drive:
-    def __init__(self, left_dir_pin, left_speed_pin, right_dir_pin, right_speed_pin):
+    def __init__(self, left_dir_pin=16, left_speed_pin=12, right_dir_pin=21, right_speed_pin=20):
         GPIO.setup(left_speed_pin, GPIO.OUT)
         self._l_pwm = GPIO.PWM(left_speed_pin, 1000)
         self._l_pwm.start(0)
@@ -262,34 +261,3 @@ class GPS:
     def _update(self):
         while True:
             pass
-
-
-class Lidar:
-    def __init__(self, port='/dev/ttyUSB0', baudrate=115200, timeout=3, distance_limit=1500):
-        from rplidar import RPLidar
-        self.scan = [0]*360
-        self.active = 1
-        self.lidar = RPLidar(port, baudrate, timeout)
-        print(self.lidar.get_info(), self.lidar.get_health())
-        print("Lidar connected.")
-        self.lidarThread = Thread(target=self._update, args=(distance_limit,))
-        self.lidarThread.start()
-
-    def _update(self, dL=1500):
-        for scan in self.lidar.iter_scans():
-            for _, angle, distance in scan:
-                self.scan[min(359, int(angle))] = min(dL, distance)
-            if not self.active:
-                break
-        self.lidar.stop()
-        self.lidar.stop_motor()
-        self.lidar.disconnect()
-        print("Lidar disconnected.")
-
-    def read(self):
-        return self.scan
-
-    def exit(self):
-        self.active = 0
-        self.lidarThread.join()
-

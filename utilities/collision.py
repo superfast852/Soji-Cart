@@ -15,17 +15,17 @@ def check_collision(ranges, collision_range, threshold):
         return False  # if the for loop completes, no obstacles were detected
 
 
-def check_surroundings(ranges, threshold):
+def check_surroundings(ranges, threshold, lMask=(180, 271), rMask=(270, 361)):
     ls_clear = []
     rs_clear = []
 
-    for i, distance in enumerate(ranges[90:180]):  # Right Side Check
+    for i, distance in enumerate(ranges[rMask[0]:rMask[1]]):  # Right Side Check
         if distance > threshold:  # If the vector_distance is greater than the threshold
-            rs_clear.append(i+90)  # append the angle of the vector to the list of available angles
+            rs_clear.append(i+rMask[0])  # append the angle of the vector to the list of available angles
 
-    for i, distance in enumerate(ranges[180:270]):  # Left Side Check
+    for i, distance in enumerate(ranges[lMask[0]:lMask[1]]):  # Left Side Check
         if distance > threshold:
-            ls_clear.append(i+180)
+            ls_clear.append(i+lMask[0])
 
     # From the list, extract all numerical sequences (e.g. [3, 5, 1, 2, 3, 4, 5, 8, 3, 1] -> [[1, 2, 3, 4, 5]])
     ls_sequences = _extract_sequence(ls_clear)

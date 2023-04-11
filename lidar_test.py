@@ -1,18 +1,41 @@
-from utilities.pi import Lidar
-from utilities import collision
-from utilities.utils import animate_and_save
-import time
-scans = []
-lidar = Lidar()
-try:
-    while len(scans) < 100:
-        scan = lidar.read()
-        scans.append(scan)
-        print(f"{len(scans)}: {scans[-1]}")
-        print(collision.check_surroundings(scans[-1], 50))
-        time.sleep(0.1)
-except Exception as e:
-    print(e)
-lidar.exit()
-animate_and_save(scans)
-print("Exiting...")
+from rplidar import RPLidar
+from utilities.pi import Drive
+from utilities.collision import check_surroundings, check_collision
+from utilities.utils import plot
+
+collision_space = 20  # Range of angles to check for obstacles in front of car
+collision_threshold = 5  # Minimum distance for the code to consider as obstacle.
+spin_intensity = 4  # Divides max_speed by this to spin robot in setCourse()
+max_speed = 100
+collision_bounds = (270 - (collision_space // 2), 270 + (collision_space // 2))
+motors = Drive(16, 12, 21, 20)
+lidar = RPLidar('/dev/ttyUSB0', timeout=3)
+motors.brake()
+
+
+def set_course(lidar_data):
+    if check_collision(lidar_data, collision_bounds, collision_threshold):  # Check for obstacles ahead
+
+        # If there is an obstacle...
+        direction, angles = check_surroundings(lidar_data, collision_threshold)  # Find out the clearest side
+        if direction == "Left":
+            motors.setLeftSpeed(max_speed/spin_intensity)
+            motors.setRightSpeed(max_speed)
+        else:
+            motors.setLeftSpeed(max_speed)
+            motors.setRightSpeed(max_speed/spin_intensity)
+        return direction, angles  # Return the direction and the angles of the obstacle for future optional odometry.
+
+    else:
+        motors.setLeftSpeed(max_speed)
+        motors.setRightSpeed(max_speed)
+        return "Forward", collision_bounds
+
+
+scan = [0]*360
+for data in lidar.iter_scans():
+    for _, angle, distance in data:
+        scan[min(359, int(angle))] = distance/10
+
+    set_course(scan)
+    plot(scan)
