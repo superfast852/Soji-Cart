@@ -98,7 +98,7 @@ class Drive:
 
 
 class Arm:
-    def __init__(self, num_servos=6, smoothness=5):
+    def __init__(self, num_servos=6, smoothness=10):
         from adafruit_servokit import ServoKit
         self.kit = ServoKit(channels=8 if num_servos >= 8 else 16)
         self.pose = [0] * num_servos
@@ -107,7 +107,7 @@ class Arm:
         self.home = [90, 75, 130, 90, 150, 180]
         self.grabbing = [90, 10, 90, 120, 150, 180]
         self.dropping = [90, 90, 50, 0, 150, 0]
-        self.move(self.home)
+        self.test(self.home)
 
     def grab(self):
         self.pose[-1] = 0
@@ -123,14 +123,13 @@ class Arm:
             time.sleep(0.1)
             self.grabbing[4] = 90
         self.move(self.grabbing)
-        time.sleep(period)
         self.grab()
-        time.sleep(period/5)
-        self.move(self.dropping)
         time.sleep(period)
+        self.move(self.dropping)
         self.drop()
-        time.sleep(period/5)
+        time.sleep(period)
         self.move(self.home)
+        self.grabbing[4] = 150
 
     def test(self, pose=None, timestep=0.1):
         if pose == None:
