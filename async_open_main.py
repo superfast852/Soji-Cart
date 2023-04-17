@@ -16,6 +16,7 @@ collision_bounds = (200, 300)  # (250, 290)
 outwards = 0
 data = [0, 0]
 pose = [90, 75, 130, 90, 150, 180]
+cmd = "move"
 mode = 0
 async_life = 1
 start = 0
@@ -69,7 +70,14 @@ def async_comms():
 def async_arm():
     while True:
         if start:
-            arm.move(pose)
+            if cmd == "move":
+                arm.test(pose)
+            elif cmd == "grab":
+                arm.grab_item()
+            elif cmd == "grab1":
+                arm.grab_item(side=1)
+            else:
+                pass
 
 
 async_thread = Thread(target=async_comms)
@@ -94,13 +102,14 @@ while True:
                         print("Moving arm...")
                         if data[0] == "grab":
                             if data[1] == 1:
-                                arm.grab_item(side=1)
-                            else:
-                                arm.grab_item()
+                                cmd = "grab1"
+                            else:                 # SOMETHING WILL BREAK. CHECK INMINENT
+                                cmd = "grab"
                             outwards = "grabbed"
                             continue
                         else:
-                            arm.test(data)
+                            pose = data
+                            cmd = "move"
                     outwards = "received"
                 elif mode == 2:  # Grabbing. Optionally, use Manual mode as control for arm.
                     pass
