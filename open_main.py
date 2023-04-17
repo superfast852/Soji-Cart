@@ -16,6 +16,7 @@ collision_bounds = (250, 290)
 outwards = 0
 data = [0, 0]
 mode = 0
+async_life = 1
 
 drive = Drive(16, 12, 21, 20)
 arm = Arm()
@@ -52,11 +53,10 @@ def async_comms():
     server = Server("192.168.0.104", 9160)
     client = server.connect()
     try:
-        while True:
+        while async_life:
             mode, data = server.rx(client)
             if data == "close":
                 raise ConnectionError("Client Disconnected.")
-            print(data)
             server.tx(outwards, client)
     except Exception as e:
         print(e)
@@ -78,8 +78,10 @@ while True:
                 outwards = set_course(scan)
             elif mode == 1:  # Manual/Sentinel Mode
                 if len(data) == 2:
-                    drive.set(data[0], data[1])
+                    print("Moving car...")
+                    drive.set(round(data[0]*100), round(data[1]*100))
                 elif len(data) == 6:
+                    print("Moving arm...")
                     if data[0] == "grab":
                         if data[1] == 1:
                             arm.grab_item(side=1)
@@ -88,10 +90,20 @@ while True:
                         outwards = "grabbed"
                         continue
                     else:
-                        arm.move(data)
+                        arm.test(data)
                 outwards = "received"
             elif mode == 2:  # Grabbing. Optionally, use Manual mode as control for arm.
                 pass
     except ValueError:
         print("Lidar Error")
         pass
+    except KeyboardInterrupt:
+        print("KBInt detected! Shutting down...")
+        break
+drive.exit()
+async_life = 0
+lidar.stop()
+lidar.disconnect()
+print("Waiting for async thread to close...")
+async_thread.join()
+print("Shutdown Successful!")
