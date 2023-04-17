@@ -18,6 +18,7 @@ except ImportError:
 
 import time
 from threading import Thread
+from utilities.utils import smoothSpeed
 
 
 class Drive:
@@ -134,9 +135,13 @@ class Arm:
                 print(f"Servo {i} does not exist.")
                 return None
 
-    def test(self):
-        self.move(self.home)
-        return 1
+    def test(self, pose):
+        for i, joint in enumerate(self.arm):
+            position = int(smoothSpeed(self.pose[i], pose[i], 10, 1))
+            self.pose[i] += position
+            joint.angle = self.pose[i]
+            time.sleep(0.1)
+
 
 
 class Battery:

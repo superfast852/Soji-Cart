@@ -30,6 +30,7 @@ class Server(Comms):
     def connect(self, comm_timeout=5):
         s, addr = self.s.accept()
         s.settimeout(comm_timeout)
+        return s
 
     def close(self):
         pass

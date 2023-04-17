@@ -1,22 +1,23 @@
 from rplidar import RPLidar
-from utilities.pi import Drive, Arm
+from utilities.pi import Drive
 from utilities.collision import check_surroundings, check_collision
-from utilities.utils import plot, plt
 from utilities.comms import Server
+from threading import Thread
+from _thread import interrupt_main
 
 collision_space = 20  # Range of angles to check for obstacles in front of car
-collision_threshold = 250  # Minimum distance for the code to consider as obstacle.
+collision_threshold = 100  # Minimum distance for the code to consider as obstacle.
 spin_intensity = 4  # Divides max_speed by this to spin robot in setCourse()
 max_speed = 100
-collision_bounds = (200, 300)
+collision_bounds = (250, 290)
+
+outwards = 0
+inwards = (0, 0)
+start = 0
+
 motors = Drive(16, 12, 21, 20)
-lidar = RPLidar('/dev/ttyUSB0', timeout=3)
-arm = Arm()
+lidar = RPLidar('/dev/ttyUSB0', timeout=10)
 motors.brake()
-server = Server("soji.local", 9160)
-print("Waiting for connection...")
-server.connect()
-print("Connected!")
 
 
 def set_course(lidar_data):
@@ -37,25 +38,41 @@ def set_course(lidar_data):
         motors.setRightSpeed(max_speed)
         return "Forward", collision_bounds
 
-control = 0
-scan = [0]*360
-for data in lidar.iter_scans():
-    for _, angle, distance in data:
-        scan[min(359, int(angle))] = distance/10
-    msg = server.rx(server.s)
 
-    if isinstance(msg, int):  # Change mode
-        control = msg
-    if control == 0:  # Autonomous
-        print(min(scan), set_course(scan))
-    else:  # Manual
-        if len(msg) == 2:  # Drive Control
-            motors.setLeftSpeed(msg[0])
-            motors.setRightSpeed(msg[1])
-        elif len(msg) == 6:  # Arm Control
-            if msg[0] == "grab":
-                arm.grab_item()
-            else:
-                arm.move(msg)
-    server.tx("recv", server.s)
-    #plot(scan)
+def async_comms():
+    global inwards, outwards, start
+    server = Server("192.168.0.104", 9160)
+    client = server.connect()
+    start = 1
+    while True:
+        inwards = server.rx(client)
+        if inwards == "close":
+            interrupt_main()
+            break
+        print(inwards)
+        server.tx(outwards, client)
+
+
+async_thread = Thread(target=async_comms)
+async_thread.start()
+scan = [0]*360
+try:
+    while True:
+        if start:
+            for data in lidar.iter_scans():
+                try:
+                    for _, angle, distance in data:
+                        scan[min(359, int(angle))] = distance/10
+                        if isinstance(inwards, int):
+                            outwards = set_course(scan)
+                        else:
+                            motors.setLeftSpeed(round(inwards[1]*100))
+                            motors.setRightSpeed(round(inwards[0]*100))
+                except KeyboardInterrupt:
+                    break
+                except Exception as e:
+                    print(e)
+                    lidar.clean_input()
+except Exception as e:
+    print(e)
+    exit(1)
