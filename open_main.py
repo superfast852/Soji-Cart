@@ -17,6 +17,7 @@ outwards = 0
 data = [0, 0]
 mode = 0
 async_life = 1
+start = 0
 
 drive = Drive(16, 12, 21, 20)
 arm = Arm()
@@ -49,9 +50,10 @@ def set_course(lidar_data):
 
 
 def async_comms():
-    global mode, data, outwards
+    global mode, data, outwards, start
     server = Server("192.168.0.104", 9160)
     client = server.connect()
+    start = 1
     try:
         while async_life:
             mode, data = server.rx(client)
@@ -70,30 +72,31 @@ scan = [0]*360
 
 while True:
     try:
-        for lidar_scan in lidar.iter_scans():
-            for _, angle, distance in lidar_scan:
-                scan[min(359, int(angle))] = distance
+        if start:
+            for lidar_scan in lidar.iter_scans():
+                for _, angle, distance in lidar_scan:
+                    scan[min(359, int(angle))] = distance/10
 
-            if mode == 0:  # Autonomous
-                outwards = set_course(scan)
-            elif mode == 1:  # Manual/Sentinel Mode
-                if len(data) == 2:
-                    print("Moving car...")
-                    drive.set(round(data[0]*100), round(data[1]*100))
-                elif len(data) == 6:
-                    print("Moving arm...")
-                    if data[0] == "grab":
-                        if data[1] == 1:
-                            arm.grab_item(side=1)
+                if mode == 0:  # Autonomous
+                    outwards = set_course(scan)
+                elif mode == 1:  # Manual/Sentinel Mode
+                    if len(data) == 2:
+                        print("Moving car...")
+                        drive.set(round(data[0]*100), round(data[1]*100))
+                    elif len(data) == 6:
+                        print("Moving arm...")
+                        if data[0] == "grab":
+                            if data[1] == 1:
+                                arm.grab_item(side=1)
+                            else:
+                                arm.grab_item()
+                            outwards = "grabbed"
+                            continue
                         else:
-                            arm.grab_item()
-                        outwards = "grabbed"
-                        continue
-                    else:
-                        arm.test(data)
-                outwards = "received"
-            elif mode == 2:  # Grabbing. Optionally, use Manual mode as control for arm.
-                pass
+                            arm.test(data)
+                    outwards = "received"
+                elif mode == 2:  # Grabbing. Optionally, use Manual mode as control for arm.
+                    pass
     except ValueError:
         print("Lidar Error")
         pass
