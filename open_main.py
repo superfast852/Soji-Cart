@@ -9,9 +9,9 @@ from _thread import interrupt_main
 
 collision_space = 20  # Range of angles to check for obstacles in front of car
 collision_threshold = 100  # Minimum distance for the code to consider as obstacle.
-spin_intensity = 4  # Divides max_speed by this to spin robot in setCourse()
+spin_intensity = 4  # Divides max_speed by this to spin robot in setCourse(). Doesn't matter with broken drive.
 max_speed = 100
-collision_bounds = (250, 290)
+collision_bounds = (200, 300)  # (250, 290)
 
 outwards = 0
 data = [0, 0]
