@@ -15,10 +15,20 @@ try:
     GPIO.setwarnings(False)
 except ImportError:
     pass
-
 import time
-from threading import Thread
-from utilities.utils import smoothSpeed
+
+#from threading import Thread
+
+
+def smoothSpeed(current, target, speed_lim=1, min_speed=0.1, smoothing_spread=10):
+    distance = current-target
+    try:
+        direction = -distance/abs(distance)
+        speed = min(9, (distance/10)**2/smoothing_spread)
+        output = (1+speed)*direction/10*speed_lim
+        return output if abs(output) > min_speed else min_speed*direction
+    except ZeroDivisionError:
+        return 0
 
 
 class Drive:
@@ -88,23 +98,24 @@ class Drive:
 
 
 class Arm:
-    def __init__(self, num_servos=6):
+    def __init__(self, num_servos=6, smoothness=5):
         from adafruit_servokit import ServoKit
         self.kit = ServoKit(channels=8 if num_servos >= 8 else 16)
         self.pose = [0] * num_servos
+        self.smoothness = smoothness
         self.arm = [self.kit.servo[i] for i in range(num_servos)]
         self.home = [90, 75, 130, 90, 150, 180]
-        self.grabbing = [90, 10, 90, 100, 150, 180]
-        self.dropping = [90, 50, 20, 0, 150, 0]
+        self.grabbing = [90, 10, 90, 120, 150, 180]
+        self.dropping = [90, 90, 50, 0, 150, 0]
         self.move(self.home)
 
     def grab(self):
         self.pose[-1] = 0
-        self.move()
+        self.arm[-1].angle = 0
 
     def drop(self):
         self.pose[-1] = 180
-        self.move()
+        self.arm[-1].angle = 180
 
     def grab_item(self, side=0, period=0.5):
         if side == 1:
@@ -121,7 +132,7 @@ class Arm:
         time.sleep(period/5)
         self.move(self.home)
 
-    def move(self, pose=None, timestep=0.1):
+    def test(self, pose=None, timestep=0.1):
         if pose == None:
             pose = self.pose
         # TODO: Add smoothSpeed
@@ -135,12 +146,13 @@ class Arm:
                 print(f"Servo {i} does not exist.")
                 return None
 
-    def test(self, pose):
-        for i, joint in enumerate(self.arm):
-            position = int(smoothSpeed(self.pose[i], pose[i], 10, 1))
-            self.pose[i] += position
-            joint.angle = self.pose[i]
-            time.sleep(0.1)
+    def move(self, pose):
+        while self.pose != pose:
+            for i, joint in enumerate(self.arm):
+                position = int(smoothSpeed(self.pose[i], pose[i], 10, 1, self.smoothness))
+                self.pose[i] += position
+                joint.angle = self.pose[i]
+                time.sleep(0.005)
 
 
 

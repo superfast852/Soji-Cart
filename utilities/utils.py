@@ -6,15 +6,7 @@ from time import time
 from math import pi, sin, cos, radians
 
 
-def smoothSpeed(current, target, speed_lim=1, min_speed=0.1, smoothing_spread=10):
-    distance = current-target
-    try:
-        direction = -distance/abs(distance)
-        speed = min(9, (distance/10)**2/smoothing_spread)
-        output = (1+speed)*direction/10*speed_lim
-        return output if abs(output) > min_speed else min_speed*direction
-    except ZeroDivisionError:
-        return 0
+
 
 
 def set_environment():
