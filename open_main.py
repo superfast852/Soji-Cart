@@ -19,7 +19,12 @@ mode = 0
 
 drive = Drive(16, 12, 21, 20)
 arm = Arm()
-lidar = RPLidar('/dev/ttyUSB0', timeout=10)
+try:
+    lidar = RPLidar('/dev/ttyUSB0', timeout=10)
+except:
+    print("Lidar failed.")
+    drive.exit()
+    exit(1)
 drive.brake()
 
 
@@ -62,26 +67,31 @@ async_thread = Thread(target=async_comms)
 async_thread.start()
 scan = [0]*360
 
+
 while True:
-    for scan in lidar.iter_scans():
-        for _, angle, distance in scan:
-            scan[min(359, int(angle))] = distance
-        
-        if mode == 0:  # Autonomous
-            outwards = set_course(scan)
-        elif mode == 1:  # Manual/Sentinel Mode
-            if len(data) == 2:
-                drive.set(data[0], data[1])
-            elif len(data) == 6:
-                if data[0] == "grab":
-                    if data[1] == 1:
-                        arm.grab_item(side=1)
+    try:
+        for lidar_scan in lidar.iter_scans():
+            for _, angle, distance in lidar_scan:
+                scan[min(359, int(angle))] = distance
+
+            if mode == 0:  # Autonomous
+                outwards = set_course(scan)
+            elif mode == 1:  # Manual/Sentinel Mode
+                if len(data) == 2:
+                    drive.set(data[0], data[1])
+                elif len(data) == 6:
+                    if data[0] == "grab":
+                        if data[1] == 1:
+                            arm.grab_item(side=1)
+                        else:
+                            arm.grab_item()
+                        outwards = "grabbed"
+                        continue
                     else:
-                        arm.grab_item()
-                    outwards = "grabbed"
-                    continue
-                else:
-                    arm.move(data)
-            outwards = "received"
-        elif mode == 2:  # Grabbing. Optionally, use Manual mode as control for arm.
-            pass
+                        arm.move(data)
+                outwards = "received"
+            elif mode == 2:  # Grabbing. Optionally, use Manual mode as control for arm.
+                pass
+    except ValueError:
+        print("Lidar Error")
+        pass
