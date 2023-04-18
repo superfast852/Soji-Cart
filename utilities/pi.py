@@ -104,7 +104,7 @@ class Arm:
         self.pose = [0] * num_servos
         self.smoothness = smoothness
         self.arm = [self.kit.servo[i] for i in range(num_servos)]
-        self.home = [90, 75, 130, 90, 150, 180]
+        self.home = [90, 75, 130, 90, 0, 0]
         self.grabbing = [90, 10, 90, 120, 150, 180]
         self.dropping = [90, 90, 50, 0, 150, 0]
         self.test(self.home)
