@@ -10,7 +10,7 @@ from _thread import interrupt_main
 collision_space = 20  # Range of angles to check for obstacles in front of car
 collision_threshold = 100  # Minimum distance for the code to consider as obstacle.
 spin_intensity = 4  # Divides max_speed by this to spin robot in setCourse(). Doesn't matter with broken drive.
-max_speed = 100
+max_speed = 1
 collision_bounds = (200, 300)  # (250, 290)
 
 outwards = 0
@@ -53,7 +53,10 @@ def set_course(lidar_data):
 
 def async_comms():
     global mode, data, outwards, start
-    server = Server("192.168.0.104", 9160)
+    try:
+        server = Server("192.168.0.104", 9160)
+    except:
+        server = Server("soji.local", 9160)
     client = server.connect()
     start = 1
     try:
@@ -61,21 +64,20 @@ def async_comms():
             mode, data = server.rx(client)
             if data == "close":
                 raise ConnectionError("Client Disconnected.")
-            server.tx(outwards, client)
+            server.tx((outwards,), client)
     except Exception as e:
         print(e)
         interrupt_main()
 
 
 def async_arm():
-    while True:
+    while async_life:
         if cmd == "move":
             arm.test(pose)
         elif cmd == "grab":
             arm.grab_item()
         elif cmd == "grab1":
             arm.grab_item(side=1)
-        print("Adjusted Arm.")
 
 
 async_thread = Thread(target=async_comms)
