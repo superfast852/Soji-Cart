@@ -1,22 +1,16 @@
 import socket
-import _pickle as pickle
-import struct
+# import _pickle as pickle
+# import struct
+# Old Comms were moved to utils.py
 
 
 class Comms:
     def tx(self, data, conn):
-        msg = pickle.dumps(data)
-        conn.sendall(struct.pack(">I", len(msg)))
-        conn.sendall(msg)
+        msg = str(data)
+        conn.sendall(msg.encode("utf-8"))
 
     def rx(self, conn):
-        packet_size = struct.unpack('>I', conn.recv(4))[0]
-        payload = b""
-        remaining = packet_size
-        while remaining != 0:
-            payload += conn.recv(packet_size)
-            remaining = packet_size - len(payload)
-        return pickle.loads(payload)
+        return eval(conn.recv(1024).decode("utf-8"))
 
 
 class Server(Comms):
@@ -34,6 +28,7 @@ class Server(Comms):
 
     def close(self):
         pass
+
 
 class Client(Comms):
     def __init__(self, ip, port, timeout=5):

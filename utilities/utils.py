@@ -83,3 +83,20 @@ def plot(data, ax, mask=(0, 0)):
         x.append(point[0])
         y.append(point[1])
     update_rtp(x, y, ax)
+
+
+if __name__ == "__main__":
+    class Comms:
+        def tx(self, data, conn):
+            msg = pickle.dumps(data)
+            conn.sendall(struct.pack(">I", len(msg)))
+            conn.sendall(msg)
+
+        def rx(self, conn):
+            packet_size = struct.unpack('>I', conn.recv(4))[0]
+            payload = b""
+            remaining = packet_size
+            while remaining != 0:
+                payload += conn.recv(packet_size)
+                remaining = packet_size - len(payload)
+            return pickle.loads(payload)
